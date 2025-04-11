@@ -1,5 +1,5 @@
 
-# Analyzing Society's Spending Habits
+# Analyzing Society's Spending Habits Using Economic Indicators
 
 In this study, we aim to analyze the spending habits of society. We utilized data from the European Central Bank, Eurostat, the World Bank, and the OECD. Retail volume was chosen as the key indicator of society’s buying habits, as it increases when people make purchases. The data used was primarily on a monthly basis.
 
