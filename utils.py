@@ -47,12 +47,12 @@ def ccf_plot(x, y, nlags=20, alpha=0.05):
     # Plot
     lags = np.arange(nlags)
     plt.figure(figsize=(10, 5))
-    plt.bar(lags, ccf_vals, width=0.3, color='blue', label='CCF')
+    plt.bar(lags, ccf_vals, width=0.3, color='blue', edgecolor='black',label='CCF')
 
     # Plot confidence intervals
+    plt.axhline(y=0, color='black', linewidth=1)
     plt.axhline(y=confint_upper, color='red', linestyle='dashed', label=f'{100*(1-alpha)}% CI')
     plt.axhline(y=confint_lower, color='red', linestyle='dashed')
-    plt.axhline(y=0, color='black', linestyle='solid', linewidth=0.8)
 
     # Set fixed y-axis limits from -1 to 1
     plt.ylim(-1, 1)
@@ -60,6 +60,7 @@ def ccf_plot(x, y, nlags=20, alpha=0.05):
     plt.xlabel("Lag")
     plt.ylabel("Cross-Correlation")
     plt.title("Cross-Correlation Function (CCF)")
+    plt.xticks(lags)
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
@@ -144,12 +145,12 @@ def pccf_plot(x, y, nlags=20, alpha=0.05):
     conf = norm.ppf(1 - alpha / 2) / np.sqrt(len(x))
     lower_bound = -conf
     upper_bound = conf
+    lags = np.arange(nlags + 1)
 
     # Plot
     plt.figure(figsize=(10, 5))
-    lags = np.arange(nlags + 1)
-
     plt.bar(lags, pccf_vals, width=0.3, color='blue', edgecolor='black', label='PCCF')
+    
     plt.axhline(0, color='black', linewidth=1)
     plt.axhline(upper_bound, color='red', linestyle='--', label=f'{int((1-alpha)*100)}% CI')
     plt.axhline(lower_bound, color='red', linestyle='--')
