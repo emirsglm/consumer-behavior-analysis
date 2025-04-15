@@ -4,74 +4,71 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm
+from statsmodels.tsa.stattools import ccf 
 
 
-def ccf(x,y, length=20):
+
+def ccf_plot(x, y, nlags=20, alpha=0.05):
     """
-    Compute the Cross-Correlation Function (CCF) between two time series x and y.
-
-    The function calculates the Pearson correlation coefficient for each lag from 1 up to the specified length.
-    Lag here means shifting the x forward and comparing it with earlier parts of y.
-    At lag i, x is shifted forward by i steps and compared with the first (n-i) values of y.
+    Plot the Cross-Correlation Function (CCF) between two time series.
 
     Parameters:
     -----------
     x : array-like
-        First time series (numpy array or list).
+        First time series.
     y : array-like
-        Second time series (must be the same length as x).
-    length : int, optional
-        Number of lags to compute (default is 20).
+        Second time series.
+    nlags : int
+        Number of lags to compute.
+    alpha : float
+        Significance level for confidence intervals.
 
     Returns:
     --------
-    numpy.ndarray
-        An array of correlation values of length (length + 1). 
-        The first value is 1 (autocorrelation at lag 0), followed by correlations for lag 1 to `length`.
-
-    Example:
-    --------
-    >>> ccf(np.array([1,2,3,4]), np.array([4,3,2,1]), length=2)
-    array([ 1.        , -1.        , -1.        ])
+    Displays a CCF plot.
     """
-    return np.array([1]+[np.corrcoef(y[:-i].astype('float'), x[i:].astype('float'))[0,1]  \
-        for i in range(1, length+1)])
+    x = np.asarray(x)
+    y = np.asarray(y)
 
+    # Calculate CCF values
+    ccf_vals = ccf(x, y, adjusted=False, fft=True)[:nlags]  # extract only the values
 
-
-def ccf_plot(x,y, nlags=20):
-    """
-    Plot the cross correlation function (CCF) for a given time series.
-
-    Parameters:
-    - data: array-like, the time series data.
-    - nlags: int, number of lags to compute ACF for.
-
-    Returns:
-    - Displays an ACF plot.
-    """
+    # Calculate standard error
     n = len(x)
+    std_error = 1 / np.sqrt(n)
 
-    # Compute ACF values
-    acf_values = ccf(x,y,length=nlags)
+    # Calculate the z-score corresponding to the alpha value (for confidence interval)
+    z_score = norm.ppf(1 - alpha / 2)  # Two-tailed test: 1 - alpha / 2
 
-    # Confidence interval (95%) using 1.96 / sqrt(n)
-    conf_int = 1.96 / np.sqrt(n)
+    # Calculate confidence interval
+    confint_upper = std_error * z_score
+    confint_lower = -std_error * z_score
 
-    # Plot ACF
+    # Plot
+    lags = np.arange(nlags)
     plt.figure(figsize=(10, 5))
-    plt.bar(range(nlags+1), acf_values, width=0.3, color='blue', label='ACF')
-    plt.axhline(y=conf_int, color='red', linestyle='dashed', label='95% CI')
-    plt.axhline(y=-conf_int, color='red', linestyle='dashed')
+    plt.bar(lags, ccf_vals, width=0.3, color='blue', label='CCF')
+
+    # Plot confidence intervals
+    plt.axhline(y=confint_upper, color='red', linestyle='dashed', label=f'{100*(1-alpha)}% CI')
+    plt.axhline(y=confint_lower, color='red', linestyle='dashed')
     plt.axhline(y=0, color='black', linestyle='solid', linewidth=0.8)
+
+    # Set fixed y-axis limits from -1 to 1
+    plt.ylim(-1, 1)
+
     plt.xlabel("Lag")
-    plt.ylabel("Autocorrelation")
-    plt.title("Autocorrelation Function (ACF)")
+    plt.ylabel("Cross-Correlation")
+    plt.title("Cross-Correlation Function (CCF)")
     plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
     plt.show()
 
 
-def pccf(x,y, nlags=20):
+
+
+def pccf(x, y, nlags=20):
     """
     Compute the Partial Cross-Correlation Function (PCCF) between two time series x and y.
 
@@ -101,38 +98,47 @@ def pccf(x,y, nlags=20):
 
     Example:
     --------
-    >>> pccf(np.array([1,2,3,4]), np.array([4,3,2,1]), nlags=2)
+    >>> pccf(np.array([1, 2, 3, 4]), np.array([4, 3, 2, 1]), nlags=2)
     array([ 1.        , -1.        ,  0.        ])
     """
-    acf_vals = ccf(x,y, nlags)
-    pacf_vals = [1.0]  # PACF(0) = 1
+    acf_vals = ccf(x, y, nlags)
+    pccf_vals = [acf_vals[0]]  # PCCF(0) = 1
 
     for k in range(1, nlags + 1):
         num = acf_vals[k]
         den = 1.0
 
         for j in range(1, k):
-            num -= pacf_vals[j] * acf_vals[k - j]
-            den -= pacf_vals[j] * acf_vals[j]
+            num -= pccf_vals[j] * acf_vals[k - j]
+            den -= pccf_vals[j] * acf_vals[j]
 
-        pacf_k = num / den
-        pacf_vals.append(pacf_k)
+        pccf_k = num / den
+        pccf_vals.append(pccf_k)
 
-    return np.array(pacf_vals)
+    return np.array(pccf_vals)
 
 
-
-def pccf_plot(x,y, nlags=20, alpha=0.05):
+def pccf_plot(x, y, nlags=20, alpha=0.05):
     """
-    Plot the Partial Autocorrelation Function (PACF) using the recursive method.
+    Plot the Partial Cross-Correlation Function (PCCF) using the recursive method.
 
     Parameters:
-    - x: array-like, the time series data.
-    - nlags: int, number of lags to compute PACF.
-    - alpha: float, significance level (default 0.05 for 95% confidence interval).
+    -----------
+    x : array-like
+        First time series.
+    y : array-like
+        Second time series.
+    nlags : int
+        Number of lags to compute PCCF.
+    alpha : float
+        Significance level (default 0.05 for 95% confidence interval).
+
+    Returns:
+    --------
+    Displays a PCCF plot.
     """
-    # Compute PACF values using recursive algorithm
-    pacf_vals = pccf(x,y, nlags=nlags)
+    # Compute PCCF values using recursive algorithm
+    pccf_vals = pccf(x, y, nlags=nlags)
 
     # Compute confidence interval bounds
     conf = norm.ppf(1 - alpha / 2) / np.sqrt(len(x))
@@ -143,13 +149,15 @@ def pccf_plot(x,y, nlags=20, alpha=0.05):
     plt.figure(figsize=(10, 5))
     lags = np.arange(nlags + 1)
 
-    plt.bar(lags, pacf_vals, width=0.3, color='blue', edgecolor='black', label='PACF')
+    plt.bar(lags, pccf_vals, width=0.3, color='blue', edgecolor='black', label='PCCF')
     plt.axhline(0, color='black', linewidth=1)
     plt.axhline(upper_bound, color='red', linestyle='--', label=f'{int((1-alpha)*100)}% CI')
     plt.axhline(lower_bound, color='red', linestyle='--')
+    plt.ylim(-1, 1)
+
     plt.xlabel("Lag")
-    plt.ylabel("Partial Autocorrelation")
-    plt.title("Partial Autocorrelation Function (PACF)")
+    plt.ylabel("Partial Cross-Correlation")
+    plt.title("Partial Cross-Correlation Function (PCCF)")
     plt.xticks(lags)
     plt.legend()
     plt.grid(True)
