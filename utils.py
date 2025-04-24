@@ -31,7 +31,7 @@ def ccf_plot(x, y, nlags=20, alpha=0.05):
     y = np.asarray(y)
 
     # Calculate CCF values
-    ccf_vals = ccf(x, y, fft=True)[:nlags]  # extract only the values
+    ccf_vals = ccf(x, y, adjusted=True)[:nlags]  # extract only the values
 
     # Calculate standard error
     n = len(x)
