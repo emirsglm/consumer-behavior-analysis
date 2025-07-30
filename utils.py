@@ -8,63 +8,49 @@ from statsmodels.tsa.stattools import ccf
 
 
 
-def ccf_plot(x, y, nlags=20, alpha=0.05):
-    """
-    Plot the Cross-Correlation Function (CCF) between two time series.
+def ccf_plot(x1, y1, nlags=20, alpha=0.05, ax=None):
+    x = np.asarray(x1)
+    y = np.asarray(y1)
 
-    Parameters:
-    -----------
-    x : array-like
-        First time series.
-    y : array-like
-        Second time series.
-    nlags : int
-        Number of lags to compute.
-    alpha : float
-        Significance level for confidence intervals.
+    # Compute cross-correlation
+    ccf_vals = ccf(x, y, adjusted=True)[:nlags]
 
-    Returns:
-    --------
-    Displays a CCF plot.
-    """
-    x = np.asarray(x)
-    y = np.asarray(y)
-
-    # Calculate CCF values
-    ccf_vals = ccf(x, y, adjusted=True)[:nlags]  # extract only the values
-
-    # Calculate standard error
+    # Confidence interval
     n = len(x)
-    std_error = 1 / np.sqrt(n)
+    stderr = 1 / np.sqrt(n)
+    z = norm.ppf(1 - alpha / 2)
+    ci_upper = stderr * z
+    ci_lower = -stderr * z
 
-    # Calculate the z-score corresponding to the alpha value (for confidence interval)
-    z_score = norm.ppf(1 - alpha / 2)  # Two-tailed test: 1 - alpha / 2
+    # Plot setup
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(20, 3))
 
-    # Calculate confidence interval
-    confint_upper = std_error * z_score
-    confint_lower = -std_error * z_score
-
-    # Plot
     lags = np.arange(nlags)
-    plt.figure(figsize=(10, 5))
-    plt.bar(lags, ccf_vals, width=0.3, color='blue', edgecolor='black',label='CCF')
+    ax.bar(lags, ccf_vals, width=0.7, color='navy', edgecolor='white', linewidth=0.5, label='CCF')
 
-    # Plot confidence intervals
-    plt.axhline(y=0, color='black', linewidth=1)
-    plt.axhline(y=confint_upper, color='red', linestyle='dashed', label=f'{100*(1-alpha)}% CI')
-    plt.axhline(y=confint_lower, color='red', linestyle='dashed')
+    # Confidence lines
+    ax.axhline(0, color='grey', linewidth=1, linestyle='--')
+    ax.axhline(ci_upper, color='firebrick', linestyle='--', linewidth=1, alpha=0.6, label=f'{100*(1-alpha):.0f}% CI')
+    ax.axhline(ci_lower, color='firebrick', linestyle='--', linewidth=1, alpha=0.6)
 
-    # Set fixed y-axis limits from -1 to 1
-    plt.ylim(-1, 1)
+    # Styling
+    ax.set_ylim(-1, 1)
+    ax.set_xlim(-1, nlags)
+    ax.set_xlabel("Lag", fontsize=12)
+    ax.set_ylabel("Correlation", fontsize=12)
+    ax.set_title(f"Cross-Correlation Function: {x1.name} vs {y1.name}", fontsize=14, fontweight='bold', pad=10)
 
-    plt.xlabel("Lag")
-    plt.ylabel("Cross-Correlation")
-    plt.title("Cross-Correlation Function (CCF)")
-    plt.xticks(lags)
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+    # Clean ticks and spines
+    ax.tick_params(axis='both', which='both', length=0)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_color('grey')
+
+    # Grid and legend
+    ax.grid(axis='y', linestyle='--', alpha=0.3)
+    ax.legend(frameon=False, fontsize=11)
 
 
 

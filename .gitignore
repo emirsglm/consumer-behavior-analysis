@@ -5,3 +5,19 @@ API_SP.POP.TOTL_DS2_en_csv_v2_26346.csv
 ECB Data Portal_20250301215115.csv
 ECB Data Portal_20250301215120.csv
 ECB Data Portal_20250301215125.csv
+base_l1_l2.png
+base_second_hetero.png
+base_second_qq.png
+bos.ipynb
+ccf_general.png
+corr.png
+cosine_distance.png
+euc_distance.png
+homo_second_lagged.png
+lagged_l1_l2.png
+mantel.png
+plots/linearity.png
+qq_base.png
+qq_second_lagged.png
+stationarity_after.png
+stationarity_before.png
